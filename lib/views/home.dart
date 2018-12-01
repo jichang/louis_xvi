@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models//bucket.dart';
 import 'create.dart';
 
 class HomePage extends StatefulWidget {
@@ -11,6 +12,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final List<Bucket> buckets = [];
+
   void _navigateToCreatePage() {
     Navigator.push(
       context,
@@ -26,15 +29,14 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-          ],
-        ),
+      body: ListView.builder(
+        itemCount: buckets.length,
+        itemBuilder: (context, index) {
+          Bucket bucket = buckets[index];
+          return ListTile(
+            title: Text(bucket.username),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCreatePage,

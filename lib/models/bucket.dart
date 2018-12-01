@@ -1,9 +1,15 @@
 import 'package:uuid/uuid.dart';
 
 class Bucket {
-  Uuid id;
+  int id;
+  String website;
+  String username;
   String password;
   DateTime createDate;
+  DateTime updateDate;
 
-  Bucket({this.id, this.password, this.createDate});
+  Bucket({this.website, this.username, this.password, this.createDate}) {
+    this.createDate = DateTime.now();
+    this.updateDate = DateTime.now();
+  }
 }

@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:louis_xvi/models/generator.dart';
 
 class CreatePage extends StatefulWidget {
   CreatePage({Key key}) : super(key: key);
@@ -6,32 +8,208 @@ class CreatePage extends StatefulWidget {
   final String title = "New Bucket";
 
   @override
-  _CreatePageState createState() => _CreatePageState();
+  _CreatePageState createState() {
+    return _CreatePageState();
+  }
 }
 
 class _CreatePageState extends State<CreatePage> {
-  void _navigateToCreatePage() {}
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final passwordController = TextEditingController();
+
+  Random random = Random();
+
+  String website = "";
+  String username = "";
+  String password = "";
+  double length = 8;
+  bool useAlphabet = true;
+  bool useNumber = true;
+  bool useSymbol = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    setState(() {
+      passwordController.text = generatePassword();
+    });
+  }
+
+  void _saveBucket() {
+    Navigator.pop(context);
+  }
+
+  void _updatePassword() {
+    setState(() {
+      passwordController.text = generatePassword();
+    });
+  }
+
+  void _updateLength(double value) {
+    setState(() {
+      length = value;
+      passwordController.text = generatePassword();
+    });
+  }
+
+  void _toggleAlphabet(bool enabled) {
+    setState(() {
+      useAlphabet = enabled;
+      passwordController.text = generatePassword();
+    });
+  }
+
+  void _toggleNumber(bool enabled) {
+    setState(() {
+      useNumber = enabled;
+      passwordController.text = generatePassword();
+    });
+  }
+
+  void _toggleSymbol(bool enabled) {
+    setState(() {
+      useSymbol = enabled;
+      passwordController.text = generatePassword();
+    });
+  }
+
+  String generatePassword() {
+    List<Generator> generators = List();
+    if (useAlphabet) {
+      generators.add(AlphabetGenerator());
+    }
+    if (useNumber) {
+      generators.add(NumberGenerator());
+    }
+    if (useSymbol) {
+      generators.add(SymbolGenerator());
+    }
+
+    ChoiceGenerator choice = ChoiceGenerator(generators);
+    SequenceGenerator sequence = SequenceGenerator(choice, length.toInt());
+
+    return sequence.generate(random);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: <Widget>[
+          FlatButton.icon(
+            icon: Icon(
+              Icons.save,
+              color: Colors.white,
+            ),
+            label: Text(
+              'Save',
+              style: TextStyle(
+                color: Colors.white,
+              ),
+            ),
+            onPressed: _saveBucket,
+          )
+        ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            children: <Widget>[
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 10,
+                  left: 10,
+                  right: 10,
+                ),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    icon: Icon(Icons.home),
+                    labelText: 'Website',
+                    hintText: 'Website',
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 10,
+                  left: 10,
+                  right: 10,
+                ),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    icon: Icon(Icons.account_circle),
+                    labelText: 'Username',
+                    hintText: 'Username',
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 10,
+                  left: 10,
+                  right: 10,
+                ),
+                child: TextFormField(
+                  decoration: InputDecoration(
+                    icon: Icon(Icons.lock),
+                    labelText: 'Password',
+                    hintText: 'Username',
+                    suffixIcon: GestureDetector(
+                      child: Icon(Icons.refresh),
+                      onTap: _updatePassword,
+                    ),
+                  ),
+                  controller: passwordController,
+                ),
+              ),
+              Padding(
+                padding:
+                    EdgeInsets.only(top: 30, left: 16, right: 16, bottom: 0),
+                child: Text("Generator Config"),
+              ),
+              Padding(
+                padding: EdgeInsets.only(
+                  top: 10,
+                  left: 16,
+                  right: 16,
+                ),
+                child: Row(
+                  children: <Widget>[
+                    Text("Length"),
+                    Expanded(
+                      child: Slider(
+                        label: length.toInt().toString(),
+                        value: length,
+                        min: 4.0,
+                        max: 64.0,
+                        divisions: 60,
+                        onChanged: _updateLength,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SwitchListTile(
+                title: Text("Alphabet"),
+                value: useAlphabet,
+                onChanged: _toggleAlphabet,
+              ),
+              SwitchListTile(
+                title: Text("Number"),
+                value: useNumber,
+                onChanged: _toggleNumber,
+              ),
+              SwitchListTile(
+                title: Text("Symbol"),
+                value: useSymbol,
+                onChanged: _toggleSymbol,
+              ),
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToCreatePage,
-        tooltip: 'Create',
-        child: Icon(Icons.add),
       ),
     );
   }
