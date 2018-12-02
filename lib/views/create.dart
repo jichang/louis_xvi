@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:louis_xvi/models/bucket.dart';
 import 'package:louis_xvi/models/generator.dart';
 
 class CreatePage extends StatefulWidget {
@@ -15,6 +16,8 @@ class CreatePage extends StatefulWidget {
 
 class _CreatePageState extends State<CreatePage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final websiteController = TextEditingController();
+  final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
   Random random = Random();
@@ -36,8 +39,26 @@ class _CreatePageState extends State<CreatePage> {
     });
   }
 
-  void _saveBucket() {
-    Navigator.pop(context);
+  @override
+  void dispose() {
+    // Clean up the controller when the Widget is removed from the Widget tree
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  void _saveBucket() async {
+    final state = _formKey.currentState;
+    state.save();
+
+    Bucket bucket = new Bucket(
+      websiteController.text,
+      usernameController.text,
+      passwordController.text,
+    );
+
+    await bucket.save();
+
+    Navigator.pop(context, bucket);
   }
 
   void _updatePassword() {
@@ -130,6 +151,7 @@ class _CreatePageState extends State<CreatePage> {
                     labelText: 'Website',
                     hintText: 'Website',
                   ),
+                  controller: websiteController,
                 ),
               ),
               Padding(
@@ -144,6 +166,7 @@ class _CreatePageState extends State<CreatePage> {
                     labelText: 'Username',
                     hintText: 'Username',
                   ),
+                  controller: usernameController,
                 ),
               ),
               Padding(
@@ -156,7 +179,7 @@ class _CreatePageState extends State<CreatePage> {
                   decoration: InputDecoration(
                     icon: Icon(Icons.lock),
                     labelText: 'Password',
-                    hintText: 'Username',
+                    hintText: 'Password',
                     suffixIcon: GestureDetector(
                       child: Icon(Icons.refresh),
                       onTap: _updatePassword,

@@ -21,6 +21,7 @@ dependencies:
   cupertino_icons: ^0.1.2
   rxdart: ^0.19.0
   uuid: ^1.0.3
+  path_provider: ^0.4.1
   sqflite: any
 
 dev_dependencies:

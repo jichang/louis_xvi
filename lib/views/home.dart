@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models//bucket.dart';
+import 'package:flutter/services.dart';
+import 'package:louis_xvi/models/bucket.dart';
 import 'create.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,13 +15,37 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final List<Bucket> buckets = [];
 
-  void _navigateToCreatePage() {
-    Navigator.push(
+  @override
+  void initState() {
+    super.initState();
+
+    _loadData();
+  }
+
+  void _loadData() async {
+    List<Bucket> buckets = await Bucket.load();
+    setState(() {
+      this.buckets.addAll(buckets);
+    });
+  }
+
+  void _copyPassword(Bucket bucket) {
+    Clipboard.setData(new ClipboardData(text: bucket.password));
+  }
+
+  void _navigateToCreatePage() async {
+    Bucket bucket = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CreatePage(),
       ),
     );
+
+    if (bucket != null) {
+      setState(() {
+        buckets.add(bucket);
+      });
+    }
   }
 
   @override
@@ -29,14 +54,33 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: ListView.builder(
-        itemCount: buckets.length,
-        itemBuilder: (context, index) {
-          Bucket bucket = buckets[index];
-          return ListTile(
-            title: Text(bucket.username),
-          );
-        },
+      body: Center(
+        child: ListView.builder(
+          itemCount: buckets.length,
+          itemBuilder: (context, index) {
+            Bucket bucket = buckets[index];
+            return ListTile(
+              title: Text(bucket.website),
+              subtitle: Text(bucket.username),
+              trailing: GestureDetector(
+                onTap: () {
+                  _copyPassword(bucket);
+                  final snackBar = SnackBar(
+                    content: Text('Copied to clipboard!'),
+                    action: SnackBarAction(
+                      label: 'Dismiss',
+                      onPressed: () {
+                        // Some code to undo the change!
+                      },
+                    ),
+                  );
+                  Scaffold.of(context).showSnackBar(snackBar);
+                },
+                child: Icon(Icons.content_copy),
+              ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToCreatePage,

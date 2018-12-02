@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'views/home.dart';
 
-void main() => runApp(App());
+void main() async {
+  runApp(App());
+}
 
 class App extends StatelessWidget {
   @override
