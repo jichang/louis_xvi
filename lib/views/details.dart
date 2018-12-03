@@ -1,41 +1,66 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:louis_xvi/models/bucket.dart';
 import 'package:louis_xvi/models/generator.dart';
 
-class CreatePage extends StatefulWidget {
-  CreatePage({Key key}) : super(key: key);
+enum Mode {
+  View,
+  Edit,
+}
 
-  final String title = "New Bucket";
+class DetailsPage extends StatefulWidget {
+  DetailsPage({Key key, this.bucket}) : super(key: key);
+
+  final String title = "Bucket Details";
+  final Bucket bucket;
 
   @override
-  _CreatePageState createState() {
-    return _CreatePageState();
+  _DetailsPageState createState() {
+    return _DetailsPageState(bucket);
   }
 }
 
-class _CreatePageState extends State<CreatePage> {
+class ConstantFocusNode extends FocusNode {
+  bool hasFocusFlag;
+  ConstantFocusNode(this.hasFocusFlag);
+
+  @override
+  bool get hasFocus => hasFocusFlag;
+}
+
+class _DetailsPageState extends State<DetailsPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final websiteController = TextEditingController();
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
+  Mode mode = Mode.View;
 
   Random random = Random();
 
-  String website = "";
-  String username = "";
-  String password = "";
+  final Bucket bucket;
+
   int length = 8;
   bool useAlphabet = true;
   bool useNumber = true;
   bool useSymbol = false;
+
+  _DetailsPageState(this.bucket);
 
   @override
   void initState() {
     super.initState();
 
     setState(() {
-      passwordController.text = generatePassword();
+      websiteController.text = bucket.website;
+      usernameController.text = bucket.username;
+      passwordController.text = bucket.password;
+
+      length = bucket.generator.length;
+      useAlphabet = bucket.generator.useAlphabet;
+      useNumber = bucket.generator.useNumber;
+      useSymbol = bucket.generator.useSymbol;
     });
   }
 
@@ -47,20 +72,36 @@ class _CreatePageState extends State<CreatePage> {
     super.dispose();
   }
 
+  void _startEdit() {
+    setState(() {
+      mode = Mode.Edit;
+    });
+  }
+
   void _saveBucket() async {
     final state = _formKey.currentState;
     state.save();
 
-    Bucket bucket = new Bucket(
+    await bucket.update(
       websiteController.text,
       usernameController.text,
       passwordController.text,
-      GeneratorConfig(length.toInt(), useAlphabet, useNumber, useSymbol),
+      GeneratorConfig(length, useAlphabet, useNumber, useSymbol),
     );
 
-    await bucket.save();
-
     Navigator.pop(context, bucket);
+  }
+
+  void _copyPassword() {
+    Clipboard.setData(new ClipboardData(text: bucket.password));
+    final snackBar = SnackBar(
+      content: Text('Copied to clipboard!'),
+      action: SnackBarAction(
+        label: 'Dismiss',
+        onPressed: () {},
+      ),
+    );
+    _scaffoldKey.currentState.showSnackBar(snackBar);
   }
 
   void _updatePassword() {
@@ -69,32 +110,44 @@ class _CreatePageState extends State<CreatePage> {
     });
   }
 
+  bool isEditMode() {
+    return mode == Mode.Edit;
+  }
+
   void _updateLength(double value) {
-    setState(() {
-      length = value.toInt();
-      passwordController.text = generatePassword();
-    });
+    if (isEditMode()) {
+      setState(() {
+        length = value.toInt();
+        passwordController.text = generatePassword();
+      });
+    }
   }
 
   void _toggleAlphabet(bool enabled) {
-    setState(() {
-      useAlphabet = enabled;
-      passwordController.text = generatePassword();
-    });
+    if (isEditMode()) {
+      setState(() {
+        useAlphabet = enabled;
+        passwordController.text = generatePassword();
+      });
+    }
   }
 
   void _toggleNumber(bool enabled) {
-    setState(() {
-      useNumber = enabled;
-      passwordController.text = generatePassword();
-    });
+    if (isEditMode()) {
+      setState(() {
+        useNumber = enabled;
+        passwordController.text = generatePassword();
+      });
+    }
   }
 
   void _toggleSymbol(bool enabled) {
-    setState(() {
-      useSymbol = enabled;
-      passwordController.text = generatePassword();
-    });
+    if (isEditMode()) {
+      setState(() {
+        useSymbol = enabled;
+        passwordController.text = generatePassword();
+      });
+    }
   }
 
   String generatePassword() {
@@ -118,21 +171,22 @@ class _CreatePageState extends State<CreatePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      key: _scaffoldKey,
       appBar: AppBar(
         title: Text(widget.title),
         actions: <Widget>[
           FlatButton.icon(
             icon: Icon(
-              Icons.save,
+              isEditMode() ? Icons.save : Icons.edit,
               color: Colors.white,
             ),
             label: Text(
-              'Save',
+              isEditMode() ? 'Save' : 'Edit',
               style: TextStyle(
                 color: Colors.white,
               ),
             ),
-            onPressed: _saveBucket,
+            onPressed: isEditMode() ? _saveBucket : _startEdit,
           )
         ],
       ),
@@ -154,6 +208,7 @@ class _CreatePageState extends State<CreatePage> {
                     hintText: 'Website',
                   ),
                   controller: websiteController,
+                  focusNode: ConstantFocusNode(isEditMode()),
                 ),
               ),
               Padding(
@@ -169,6 +224,7 @@ class _CreatePageState extends State<CreatePage> {
                     hintText: 'Username',
                   ),
                   controller: usernameController,
+                  focusNode: ConstantFocusNode(isEditMode()),
                 ),
               ),
               Padding(
@@ -183,11 +239,13 @@ class _CreatePageState extends State<CreatePage> {
                     labelText: 'Password',
                     hintText: 'Password',
                     suffixIcon: GestureDetector(
-                      child: Icon(Icons.refresh),
-                      onTap: _updatePassword,
+                      child: Icon(
+                          isEditMode() ? Icons.refresh : Icons.content_copy),
+                      onTap: isEditMode() ? _updatePassword : _copyPassword,
                     ),
                   ),
                   controller: passwordController,
+                  focusNode: ConstantFocusNode(isEditMode()),
                 ),
               ),
               Padding(
@@ -206,7 +264,7 @@ class _CreatePageState extends State<CreatePage> {
                     Text("Length"),
                     Expanded(
                       child: Slider(
-                        label: length.toString(),
+                        label: length.toInt().toString(),
                         value: length.toDouble(),
                         min: 4.0,
                         max: 64.0,

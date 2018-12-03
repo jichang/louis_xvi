@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:louis_xvi/models/bucket.dart';
 import 'create.dart';
+import 'details.dart';
 
 class HomePage extends StatefulWidget {
   HomePage({Key key}) : super(key: key);
@@ -78,6 +79,16 @@ class _HomePageState extends State<HomePage> {
                 },
                 child: Icon(Icons.content_copy),
               ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DetailsPage(
+                          bucket: bucket,
+                        ),
+                  ),
+                );
+              },
             );
           },
         ),

@@ -1,15 +1,45 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:louis_xvi/storage/storage.dart';
+import 'dart:convert';
+
+class GeneratorConfig {
+  int length = 8;
+  bool useAlphabet = false;
+  bool useNumber = false;
+  bool useSymbol = false;
+
+  GeneratorConfig(
+    this.length,
+    this.useAlphabet,
+    this.useNumber,
+    this.useSymbol,
+  );
+
+  GeneratorConfig.fromJson(Map<String, dynamic> json) {
+    length = json['length'];
+    useAlphabet = json['useAlphabet'];
+    useNumber = json['useNumber'];
+    useSymbol = json['useSymbol'];
+  }
+
+  Map<String, dynamic> toJson() => {
+        'length': length,
+        'useAlphabet': useAlphabet,
+        'useNumber': useNumber,
+        'useSymbol': useSymbol,
+      };
+}
 
 class Bucket {
   int id;
   String website;
   String username;
   String password;
+  GeneratorConfig generator;
   DateTime createDate;
   DateTime updateDate;
 
-  Bucket(this.website, this.username, this.password) {
+  Bucket(this.website, this.username, this.password, this.generator) {
     this.createDate = DateTime.now();
     this.updateDate = DateTime.now();
   }
@@ -19,16 +49,59 @@ class Bucket {
     this.website = row['website'];
     this.username = row['username'];
     this.password = row['password'];
+    Map<String, dynamic> generator = json.decode(row['generator']);
+    this.generator = GeneratorConfig.fromJson(generator);
     this.createDate = DateTime.parse(row['createDate']);
     this.updateDate = DateTime.parse(row['updateDate']);
   }
 
-  static openDatabase(path) async {}
+  void update(
+    String website,
+    String username,
+    String password,
+    GeneratorConfig generator,
+  ) async {
+    this.website = website;
+    this.username = username;
+    this.password = password;
+    this.generator = generator;
+
+    Database database = await Storage.open();
+    String sql = """
+      UPDATE buckets
+      SET website = ?, username = ?, password = ?, generator = ?
+      WHERE rowid = ?
+      """;
+    await database.rawUpdate(
+      sql,
+      [
+        website,
+        username,
+        password,
+        json.encode(generator),
+        id,
+      ],
+    );
+
+    await Storage.close(database);
+  }
+
+  void save() async {
+    Database database = await Storage.open();
+    String sql = """
+      INSERT INTO buckets(website, username, password, generator)
+      VALUES (?, ?, ?, ?)
+      """;
+    id = await database
+        .rawInsert(sql, [website, username, password, json.encode(generator)]);
+
+    await Storage.close(database);
+  }
 
   static Future<List<Bucket>> load() async {
     Database database = await Storage.open();
     String sql = """
-      SELECT rowid, website, username, password, createDate, updateDate
+      SELECT rowid, website, username, password, generator, createDate, updateDate
       FROM buckets
     """;
     List<Bucket> buckets = [];
@@ -39,18 +112,5 @@ class Bucket {
     Storage.close(database);
 
     return buckets;
-  }
-
-  void update() async {}
-
-  void save() async {
-    Database database = await Storage.open();
-    String sql = """
-      INSERT INTO buckets(website, username, password)
-      VALUES (?, ?, ?)
-      """;
-    id = await database.rawInsert(sql, [website, username, password]);
-
-    await Storage.close(database);
   }
 }
