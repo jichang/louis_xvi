@@ -31,6 +31,7 @@ build/
 # Desktop related
 desktop/flutter
 desktop/flutter-desktop-embedding
+desktop/flutter_engine_framework
 
 # Android related
 **/android/**/gradle-wrapper.jar
