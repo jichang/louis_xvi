@@ -28,6 +28,10 @@
 .pub/
 build/
 
+# Desktop related
+desktop/flutter
+desktop/flutter-desktop-embedding
+
 # Android related
 **/android/**/gradle-wrapper.jar
 **/android/.gradle
