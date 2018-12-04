@@ -8,8 +8,10 @@ import 'package:flutter/foundation.dart'
     show debugDefaultTargetPlatformOverride;
 
 void main() async {
-  // TODO: need to figure out how to conditional run code below
-  debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
+  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
+  }
+
   runApp(App());
 }
 
