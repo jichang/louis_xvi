@@ -25,6 +25,8 @@ dependencies:
   uuid: ^1.0.3
   path_provider: ^0.4.1
   sqflite: any
+  qr_flutter: ^1.1.5
+  camera: ^0.2.6
 
 dev_dependencies:
   flutter_test:
