@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'views/home.dart';
-
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart'

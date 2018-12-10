@@ -55,7 +55,7 @@ class Bucket {
     this.updateDate = DateTime.parse(row['updateDate']);
   }
 
-  void update(
+  Future update(
     String website,
     String username,
     String password,
@@ -83,10 +83,10 @@ class Bucket {
       ],
     );
 
-    await Storage.close(database);
+    return await Storage.close(database);
   }
 
-  void save() async {
+  Future save() async {
     Database database = await Storage.open();
     String sql = """
       INSERT INTO buckets(website, username, password, generator)
@@ -113,4 +113,13 @@ class Bucket {
 
     return buckets;
   }
+
+  Map<String, dynamic> toJson() => {
+        'website': website,
+        'username': username,
+        'password': password,
+        'generator': generator.toJson(),
+        'createDate': createDate.toString(),
+        'updateDate': updateDate.toString(),
+      };
 }

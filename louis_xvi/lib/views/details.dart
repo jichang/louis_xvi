@@ -89,7 +89,9 @@ class _DetailsPageState extends State<DetailsPage> {
       GeneratorConfig(length, useAlphabet, useNumber, useSymbol),
     );
 
-    Navigator.pop(context, bucket);
+    setState(() {
+      mode = Mode.View;
+    });
   }
 
   void _copyPassword() {
