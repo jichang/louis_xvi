@@ -19,8 +19,8 @@ class SyncPage extends StatefulWidget {
 
 class _SyncPageState extends State<SyncPage>
     with SingleTickerProviderStateMixin {
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   SyncAgent _agent;
   List<CameraDescription> _cameras = [];
   CameraController _cameraController;

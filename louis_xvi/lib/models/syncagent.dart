@@ -36,6 +36,14 @@ class SyncResponse {
 
   SyncResponse(this.buckets);
 
+  SyncResponse.fromJson(Map<String, dynamic> json) {
+    List _buckets = json['buckets'];
+    buckets = _buckets.map((json) {
+      Bucket bucket = Bucket.fromJson(json);
+      return bucket;
+    }).toList();
+  }
+
   Map<String, dynamic> toJson() => {
         'buckets': buckets,
       };
@@ -111,7 +119,7 @@ class SyncAgent {
     } else if (uri.path == '/response') {
       SyncResponse syncResponse;
       try {
-        syncResponse = json.decode(content);
+        syncResponse = SyncResponse.fromJson(json.decode(content));
       } catch (e) {
         print(e);
       }
@@ -138,7 +146,6 @@ class SyncAgent {
     SyncResponse body = SyncResponse(buckets);
 
     try {
-      print(json.encode(body));
       http.Response response = await http.post(
         syncRequest.url + '/response',
         body: json.encode(body),

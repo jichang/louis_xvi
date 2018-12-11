@@ -55,6 +55,16 @@ class Bucket {
     this.updateDate = DateTime.parse(row['updateDate']);
   }
 
+  Bucket.fromJson(Map row) {
+    this.id = row['rowid'];
+    this.website = row['website'];
+    this.username = row['username'];
+    this.password = row['password'];
+    this.generator = GeneratorConfig.fromJson(row['generator']);
+    this.createDate = DateTime.parse(row['createDate']);
+    this.updateDate = DateTime.parse(row['updateDate']);
+  }
+
   Future update(
     String website,
     String username,
