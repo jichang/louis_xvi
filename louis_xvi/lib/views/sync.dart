@@ -1,10 +1,9 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:camera/camera.dart';
 import '../models/syncagent.dart';
+import 'scan.dart';
 
 class SyncPage extends StatefulWidget {
   SyncPage({Key key}) : super(key: key);
@@ -22,15 +21,12 @@ class _SyncPageState extends State<SyncPage>
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   SyncAgent _agent;
-  List<CameraDescription> _cameras = [];
-  CameraController _cameraController;
   TextEditingController urlController = TextEditingController();
   TabController _tabController;
   List<SyncRequest> requests = [];
 
   final List<Widget> tabs = [
     Tab(icon: Icon(Icons.code)),
-    Tab(icon: Icon(Icons.photo_camera)),
     Tab(icon: Icon(Icons.text_fields)),
   ];
 
@@ -46,28 +42,16 @@ class _SyncPageState extends State<SyncPage>
   void dispose() {
     _agent?.dispose();
     _tabController?.dispose();
-    _cameraController?.dispose();
 
     super.dispose();
   }
 
-  Future _setup() async {
-    await _startAgent();
-    await _initCameras();
-  }
-
   Future _startAgent() async {
-    return await _agent.start();
-  }
-
-  Future _initCameras() async {
-    if (_cameraController == null) {
-      _cameras = await availableCameras();
-      if (_cameras.length > 0) {
-        _cameraController =
-            new CameraController(_cameras[0], ResolutionPreset.medium);
-        return _cameraController.initialize();
-      }
+    try {
+      return await _agent.start();
+    } catch (e) {
+      print(e);
+      return null;
     }
   }
 
@@ -75,6 +59,21 @@ class _SyncPageState extends State<SyncPage>
     setState(() {
       requests.add(request);
     });
+  }
+
+  _scanQRCode() async {
+    String address = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ScanPage(),
+      ),
+    );
+
+    if (address != null) {
+      setState(() {
+        urlController.text = address;
+      });
+    }
   }
 
   void _showNotifications() async {
@@ -126,8 +125,12 @@ class _SyncPageState extends State<SyncPage>
         ),
       ),
       body: FutureBuilder(
-        future: _setup(),
+        future: _startAgent(),
         builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return Container();
+          }
+
           return TabBarView(
             controller: _tabController,
             children: <Widget>[
@@ -141,15 +144,6 @@ class _SyncPageState extends State<SyncPage>
               ),
               Padding(
                 padding: EdgeInsets.all(10),
-                child: _cameras.length > 0
-                    ? AspectRatio(
-                        aspectRatio: _cameraController.value.aspectRatio,
-                        child: CameraPreview(_cameraController),
-                      )
-                    : Text("No camera found"),
-              ),
-              Padding(
-                padding: EdgeInsets.all(10),
                 child: Form(
                   key: _formKey,
                   child: Column(
@@ -159,6 +153,10 @@ class _SyncPageState extends State<SyncPage>
                           icon: Icon(Icons.home),
                           labelText: 'URL adderss',
                           hintText: 'URL address',
+                          suffix: GestureDetector(
+                            onTap: _scanQRCode,
+                            child: Icon(Icons.photo_camera),
+                          ),
                         ),
                         controller: urlController,
                         validator: (String value) {

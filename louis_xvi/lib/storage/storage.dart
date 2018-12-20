@@ -32,7 +32,7 @@ class Storage {
     return db;
   }
 
-  static Future<dynamic> close(Database database) async {
+  static Future<void> close(Database database) async {
     return await database.close();
   }
 }

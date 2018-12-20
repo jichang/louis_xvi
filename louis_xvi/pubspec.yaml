@@ -10,7 +10,7 @@ description: A local password management app build with Flutter.
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.0.0-dev.68.0 <3.0.0"
+  sdk: ">=2.0.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -28,7 +28,7 @@ dependencies:
   sqflite: any
   qr_flutter: ^1.1.5
   camera: ^0.2.6
-  pointycastle: ^1.0.0-rc4
+  pointycastle: ^1.0.0
 
 dev_dependencies:
   flutter_test:

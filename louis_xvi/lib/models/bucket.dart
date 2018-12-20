@@ -65,7 +65,7 @@ class Bucket {
     this.updateDate = DateTime.parse(row['updateDate']);
   }
 
-  Future update(
+  Future<void> update(
     String website,
     String username,
     String password,
@@ -96,7 +96,7 @@ class Bucket {
     return await Storage.close(database);
   }
 
-  Future save() async {
+  Future<void> save() async {
     Database database = await Storage.open();
     String sql = """
       INSERT INTO buckets(website, username, password, generator)

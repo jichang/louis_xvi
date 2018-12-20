@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:pointycastle/pointycastle.dart';
 import 'package:http/http.dart' as http;
 import './bucket.dart';
+import '../utils/format.dart';
 
 class SyncRequest {
   String url;
@@ -39,8 +40,12 @@ class SyncResponse {
   SyncResponse.fromJson(Map<String, dynamic> json) {
     List _buckets = json['buckets'];
     buckets = _buckets.map((json) {
-      Bucket bucket = Bucket.fromJson(json);
-      return bucket;
+      try {
+        Bucket bucket = Bucket.fromJson(json);
+        return bucket;
+      } catch (e) {
+        return null;
+      }
     }).toList();
   }
 
@@ -55,13 +60,13 @@ class SyncAgent {
   InternetAddress address;
   int port = 0;
   HttpServer server;
-  AsymmetricKeyPair keyPair;
+  AsymmetricKeyPair<PublicKey, PrivateKey> keyPair;
 
   OnRequest onRequest;
 
   SyncAgent(this.onRequest);
 
-  url() {
+  String url() {
     if (address != null) {
       return 'http://${address.address}:$port';
     } else {
@@ -106,22 +111,40 @@ class SyncAgent {
   handle(HttpRequest request) async {
     String content = await request.transform(utf8.decoder).join();
     Uri uri = request.uri;
-    if (uri.path == '/request') {
-      SyncRequest syncRequest = SyncRequest.fromJson(json.decode(content));
+    if (uri.path == '/request' && request.method == 'POST') {
+      SyncRequest syncRequest;
+      try {
+        syncRequest = SyncRequest.fromJson(json.decode(content));
+      } catch (e) {
+        syncRequest = null;
+      }
       await this.onRequest(syncRequest);
 
-      request.response.statusCode = HttpStatus.created;
+      request.response.statusCode =
+          syncRequest == null ? HttpStatus.badRequest : HttpStatus.ok;
       request.response.headers.contentType = ContentType.json;
       request.response
         ..write('')
         ..flush()
         ..close();
-    } else if (uri.path == '/response') {
+    } else if (uri.path == '/response' && request.method == 'POST') {
       SyncResponse syncResponse;
       try {
-        syncResponse = SyncResponse.fromJson(json.decode(content));
+        PrivateKeyParameter<RSAPrivateKey> privateKeyParameter =
+            PrivateKeyParameter(keyPair.privateKey);
+
+        AsymmetricBlockCipher asymmetricBlockCipher =
+            AsymmetricBlockCipher("RSA");
+        asymmetricBlockCipher.reset();
+        asymmetricBlockCipher.init(true, privateKeyParameter);
+
+        Uint8List cipherText = createUint8ListFromHexString(content);
+        Uint8List out = asymmetricBlockCipher.process(cipherText);
+        String plainText = String.fromCharCodes(out);
+        Map<String, dynamic> jsonMap = json.decode(plainText);
+        syncResponse = SyncResponse.fromJson(jsonMap);
       } catch (e) {
-        print(e);
+        syncResponse = null;
       }
 
       request.response.statusCode =
@@ -141,23 +164,35 @@ class SyncAgent {
     }
   }
 
-  Future respond(SyncRequest syncRequest) async {
+  Future<http.Response> respond(SyncRequest syncRequest) async {
     List<Bucket> buckets = await Bucket.load();
     SyncResponse body = SyncResponse(buckets);
 
     try {
+      PublicKeyParameter<RSAPublicKey> publicKeyParameter =
+          PublicKeyParameter(keyPair.publicKey);
+
+      AsymmetricBlockCipher asymmetricBlockCipher =
+          AsymmetricBlockCipher("RSA");
+      asymmetricBlockCipher.reset();
+      asymmetricBlockCipher.init(true, publicKeyParameter);
+
+      Uint8List plainText = createUint8ListFromString(json.encode(body));
+      Uint8List encryptText = asymmetricBlockCipher.process(plainText);
+      String hexText = formatBytesAsHexString(encryptText);
+
       http.Response response = await http.post(
         syncRequest.url + '/response',
-        body: json.encode(body),
-        headers: {'Content-Type': 'application/json'},
+        body: hexText,
+        headers: {'Content-Type': 'application/text'},
       );
       return response;
     } catch (e) {
-      print(e);
+      return null;
     }
   }
 
-  Future request(String url) async {
+  Future<http.Response> request(String url) async {
     SyncRequest body = SyncRequest(this.url(), this.keyPair.publicKey);
 
     try {
@@ -168,12 +203,12 @@ class SyncAgent {
       );
       return response;
     } catch (e) {
-      print(e);
+      return null;
     }
   }
 
   dispose() {
-    server.close();
+    server?.close();
     server = null;
   }
 }
